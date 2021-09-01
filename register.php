@@ -1,15 +1,13 @@
-<?php require_once('inc/header.php'); ?>
-<?php require_once('inc/functions.php'); ?>
-
-
 <?php
 
+require_once('inc/functions.php');
 if (!empty($_POST)) {
     // Variables
     $username = $_POST['username'];
     $email = $_POST['email'];
     $password = $_POST['password'];
     $passwordConfirm = $_POST['password_confirm'];
+    $lenght = 60;
     // Tableau d'erreurs
     $errors = array();
     // Connection avec la bdd
@@ -39,16 +37,20 @@ if (!empty($_POST)) {
         $errors['password'] = "Votre mot de passe n'est pas valide";
     }
     if (empty($errors)) {
+        $req = $pdo->prepare("INSERT INTO users SET username = ?, password = ?, email = ?, confirmation_token = ?"); //pre=éparation requête
         $password = password_hash($password, PASSWORD_BCRYPT); //sécuriser le mot de passe
-        $req = $pdo->prepare("INSERT INTO users SET username = ?, password = ?, email = ?"); //pre=éparation requête
-        $req->execute([$username, $password, $email]);
-        die('Votre compte a bien été crée');
+        $token = str_random($lenght);
+        $req->execute([$username, $password, $email, $token]);
+        $userId = $pdo->lastInsertId();
+        mail($email, "Confirmation de votre compte", "Pour valider votre compter, merci de cliquer sur ce lien\n\nhttp://localhost/projet/PHP/Site_Livre/confirm.php?id=$userId&token=$token");
+        header('Location: login.php');
+        exit();
     }
 }
 ?>
 
 
-
+<?php require_once('inc/header.php'); ?>
 <h1>S'inscrire </h1>
 
 <?php if (empty($errors)) : ?>
